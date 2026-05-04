@@ -1,0 +1,40 @@
+# Database — contains raw email bodies including OTPs, account numbers, balances.
+# Never commit this. (TODO-1)
+finance.db
+finance.db-journal
+finance.db-wal
+finance.db-shm
+*.db
+
+# Local config (real email credentials)
+config.toml
+
+# Real-email fixtures (may contain personal data — keep out of git)
+tests/fixtures/real/
+
+# Eval harness data — fixtures are real bank emails, ground truth references
+# them, results contain field-level traces. Harness CODE (run_eval.py) is
+# committed; data is local-only. See tests/eval/README.md.
+tests/eval/fixtures/
+tests/eval/ground_truth.jsonl
+tests/eval/results.jsonl
+
+# FastHTML session-signing key — regenerated on app start if missing
+.sesskey
+
+# Claude Code local state (leaks workflow + macOS username paths)
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+.gstack/

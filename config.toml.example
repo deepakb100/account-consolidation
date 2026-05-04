@@ -1,0 +1,36 @@
+# Personal Finance Dashboard — config example.
+# Copy this to config.toml and fill in real credentials.
+# config.toml is gitignored.
+
+[llm]
+# Default: local Ollama (private, no data leaves machine).
+# Run `ollama serve` and `ollama pull llama3.2` first.
+provider = "ollama"
+model = "llama3.1"
+host = "http://localhost:11434"
+
+# Optional: OpenAI fallback after 3 failed Ollama parses.
+# WARNING: enabling this sends email bodies to OpenAI.
+# fallback_provider = "openai"
+# openai_api_key = "sk-..."
+# openai_model = "gpt-4o-mini"
+
+[poll]
+# Minutes between scheduled polls.
+interval_minutes = 60
+
+[owners]
+# Owner labels shown in the bank-account assignment dropdown.
+# Edit these to your household / business labels (e.g. ["Alice", "Bob", "MyCo"]).
+names = ["Owner1", "Owner2", "Owner3"]
+
+[digest]
+# Weekly financial selfie email (Phase 1.5).
+enabled = false
+send_to = "you@example.com"
+send_from = "you@example.com"
+day_of_week = "Sunday"
+
+# Email accounts are stored in the SQLite DB, not config.
+# Add them via the /settings page in the dashboard, or by inserting into
+# email_accounts directly. See README.md for the IMAP/SMTP host reference.

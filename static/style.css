@@ -1,0 +1,1030 @@
+/* Personal Finance Dashboard — design tokens locked in /plan-design-review.
+   Account-first layout (revision 20260426).
+   Universal app-UI rules: calm surface hierarchy, dense but readable, minimal chrome.
+*/
+
+/* Inter, self-hosted (drop .woff2 files into static/fonts/ to enable; falls back
+   to system-ui until then). */
+@font-face {
+  font-family: 'Inter';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: local('Inter Regular'), local('Inter-Regular'),
+       url('/static/fonts/Inter-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-weight: 500;
+  src: local('Inter Medium'), local('Inter-Medium'),
+       url('/static/fonts/Inter-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-weight: 600;
+  src: local('Inter SemiBold'), local('Inter-SemiBold'),
+       url('/static/fonts/Inter-SemiBold.woff2') format('woff2');
+}
+
+:root {
+  /* Color tokens (D10 from original design review) */
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --border: #e5e5e5;
+  --text-primary: #111111;
+  --text-secondary: #666666;
+  --accent-expense: #dc2626;
+  --accent-savings: #16a34a;
+  --accent-neutral: #2563eb;
+
+  /* Spacing scale: 4px base */
+  --s-1: 4px;  --s-2: 8px;   --s-3: 12px;
+  --s-4: 16px; --s-5: 20px;  --s-6: 24px;
+
+  --r-card: 6px;
+  --r-pill: 20px;
+  --r-button: 4px;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+a:hover { color: var(--accent-neutral); }
+button { font: inherit; cursor: pointer; }
+
+/* --- header ------------------------------------------------------------- */
+
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: var(--s-3) var(--s-6);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+.header-link {
+  font-size: 13px; color: var(--text-secondary);
+  padding: var(--s-1) var(--s-3);
+  border-radius: var(--r-button);
+}
+.header-link:hover { background: var(--bg); color: var(--text-primary); }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+/* --- refresh widget (in header) ---------------------------------------- */
+
+.refresh-widget {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 12px;
+}
+.refresh-widget .btn {
+  padding: var(--s-1) var(--s-3);
+  font-size: 12px;
+  min-height: 28px;
+}
+.refresh-sub {
+  font-size: 11px;
+}
+.refresh-sub.muted   { color: var(--text-secondary); }
+.refresh-sub.error   { color: var(--accent-expense); }
+.refresh-detail      { color: var(--text-primary); font-weight: 500; }
+
+/* Spinner: small spinning ring next to "refreshing…" text */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent-neutral);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- home (top-level container) ----------------------------------------- */
+
+/* Home page is a vertical stack of owner sections.
+   Each .owner-section contains an .owner-header + .account-grid.
+   The auto-fit grid lives on .account-grid (was on .home before grouping). */
+.home {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--s-6) var(--s-5);
+}
+
+.home-empty {
+  text-align: center;
+  padding: var(--s-6) var(--s-5);
+}
+
+.owner-section {
+  margin-bottom: var(--s-6);
+}
+.owner-section:last-child {
+  margin-bottom: 0;
+}
+
+.owner-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding-bottom: var(--s-2);
+  margin-bottom: var(--s-4);
+  border-bottom: 1px solid var(--border);
+}
+.owner-name {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  color: var(--text-primary);
+}
+.owner-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+/* Unowned group: faded label so it visually de-emphasizes vs real owners. */
+.owner-section.unowned .owner-name {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* The account grid: 1 col on phone, 2 on laptop, 3 on wide monitor.
+   Min card width 440px gives:
+     <440        : 1 col (phone)
+     440-919     : 1 col (small tablet — stays single-col rather than cramped)
+     920-1399    : 2 cols (typical laptop, including 1280)
+     >=1400      : 3 cols (external monitor / 4K)  */
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+  gap: var(--s-4);
+  align-items: start;
+}
+
+/* --- account section (the unit of UI) ---------------------------------- */
+
+.account-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  /* margin-bottom removed: the grid 'gap' handles spacing between cards */
+}
+
+/* Header layout: account name on top line, owner+total share line 2.
+   Vertical stack inside .account-header; .account-meta is flex space-between. */
+.account-header {
+  padding: var(--s-3) var(--s-5);
+  border-bottom: 1px solid var(--border);
+}
+.account-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: 2px;
+}
+.account-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+/* Amount visibility toggle: small unobtrusive button at top-right of card.
+   CSS owns the label so the toggle only needs to flip the .amounts-hidden
+   class (no JS text-swap needed). */
+.toggle-amounts {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-button);
+  padding: 2px var(--s-2);
+  font-size: 11px;
+  color: var(--text-secondary);
+  min-height: 24px;
+  line-height: 1;
+  letter-spacing: 0.3px;
+}
+.toggle-amounts:hover {
+  background: var(--bg);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+.toggle-amounts::before { content: '👁  Hide'; }
+/* Selector intentionally not scoped to .account-section so the same toggle
+   pattern works inside .day-card, future cards, etc. */
+.amounts-hidden .toggle-amounts::before { content: '👁  Show'; }
+.account-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);          /* defensive: 16px between owner and total even if flex wraps */
+  flex-wrap: wrap;          /* on narrow cards, total drops below owner instead of touching */
+  row-gap: var(--s-1);
+}
+.account-meta > * + * {
+  margin-left: auto;        /* explicit push of right item even if flex space-between fails */
+}
+.account-owner {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+.account-owner.unassigned {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+.account-total {
+  font-size: 13px;
+  font-weight: 500;
+}
+.account-total.expense { color: var(--accent-expense); }
+.account-total.savings { color: var(--accent-savings); }
+.account-total.zero    { color: var(--text-secondary); }
+
+/* Privacy mask: each amount renders as <span><amount-real><amount-mask></span>.
+   Default = show real, hide mask. When the parent .account-section has
+   .amounts-hidden, the swap is reversed. The mask is muted gray regardless of
+   sign so red/green doesn't leak the sign of a hidden amount. */
+.amount-mask {
+  display: none;
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+/* Selector unscoped: any ancestor with .amounts-hidden masks descendant
+   amounts. Used by .account-section AND .day-card. */
+.amounts-hidden .amount-real { display: none; }
+.amounts-hidden .amount-mask { display: inline; }
+
+.account-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- transaction row --------------------------------------------------- */
+
+.transaction-row {
+  display: grid;
+  /* 5 columns: date · merchant · amount · tag · trailing-action.
+     Trailing-action holds either the Move-to dropdown (orphan rows) OR
+     the SMS delete X. Empty for plain email-derived rows. */
+  grid-template-columns: 60px 1fr auto auto auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-3) var(--s-5);
+  border-bottom: 1px solid var(--border);
+  min-height: 48px;
+}
+.transaction-row:hover { background: #fafafa; }
+/* Last row in a card: hide its bottom border. The transaction-row is now
+   wrapped by .tx-wrapper (which also contains the optional email panel),
+   so the :last-child target moved up one level. */
+.tx-wrapper:last-child .transaction-row { border-bottom: none; }
+.tx-wrapper:last-child .tx-email-panel { border-bottom: none; }
+
+.tx-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+/* Merchant text is a button styled as an inline hyperlink — clicking toggles
+   the source-email panel below the row. Reset all default button chrome. */
+.tx-merchant {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  color: var(--accent-neutral);
+  cursor: pointer;
+  font-family: inherit;
+  min-width: 0;
+}
+.tx-merchant:hover { text-decoration: underline; }
+.tx-merchant:focus-visible {
+  outline: 2px solid var(--accent-neutral);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.tx-amount {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tx-amount.expense { color: var(--accent-expense); }
+.tx-amount.savings { color: var(--accent-savings); }
+
+.tx-tag {
+  font-size: 10px;
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  background: var(--surface);
+  margin-left: var(--s-1);
+  min-height: 24px;
+  min-width: 44px;
+  white-space: nowrap;
+}
+.tx-tag:hover { background: var(--bg); }
+.tx-tag.savings-tag {
+  border-color: #bbf7d0; background: #f0fdf4; color: var(--accent-savings);
+}
+.tx-tag.expense-tag {
+  border-color: #fecaca; background: #fef2f2; color: var(--accent-expense);
+}
+.tx-tag.transfer-tag {
+  border-color: #bfdbfe; background: #eff6ff; color: var(--accent-neutral);
+}
+
+/* Move-to control: small inline form, only on orphan rows */
+.tx-move-form {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--s-2);
+}
+.tx-move-form select {
+  font-size: 11px;
+  padding: 2px var(--s-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-button);
+  background: var(--bg);
+  color: var(--text-secondary);
+  max-width: 180px;
+}
+.tx-move-form select:hover {
+  border-color: var(--accent-neutral);
+  color: var(--accent-neutral);
+}
+
+/* --- source-email viewer (per-transaction) ----------------------------- */
+
+/* Empty slot under each row — toggleEmail() in app.py fetches into it via
+   htmx.ajax + innerHTML, and clears innerHTML on second click. */
+.tx-email-slot { display: block; }
+
+.tx-email-panel {
+  background: #fafafa;
+  border-bottom: 1px solid var(--border);
+  padding: var(--s-3) var(--s-5);
+  font-size: 12px;
+}
+.email-meta {
+  margin-bottom: var(--s-2);
+}
+.email-meta-row {
+  font-size: 12px;
+  color: var(--text-secondary);
+  word-break: break-word;
+  margin-bottom: 2px;
+}
+.email-label { font-weight: 500; color: var(--text-primary); }
+.email-value { color: var(--text-secondary); }
+/* Scrollable monospaced body — preserves the html2text whitespace so table
+   layouts in HDFC/ICICI emails stay aligned. */
+.email-body {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-button);
+  padding: var(--s-3);
+  font-family: 'SF Mono', Monaco, Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  max-height: 400px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+/* --- show all / show less button --------------------------------------- */
+
+.show-all-btn {
+  display: block;
+  width: 100%;
+  padding: var(--s-3);
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  color: var(--accent-neutral);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  min-height: 44px;
+}
+.show-all-btn:hover { background: #fafafa; }
+
+/* --- onboarding (first run) -------------------------------------------- */
+
+.onboarding {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: var(--s-6);
+  max-width: 480px;
+  margin: var(--s-6) auto;
+  box-shadow: var(--shadow-card);
+}
+.onboarding h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--s-4);
+  letter-spacing: -0.3px;
+}
+.onboarding .step {
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.onboarding .step:last-child { border-bottom: none; }
+.onboarding .step.done { color: var(--accent-savings); }
+.onboarding .step.done::before { content: '✓ '; }
+
+.empty-state {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: var(--s-3);
+  font-size: 13px;
+}
+
+/* --- settings page ----------------------------------------------------- */
+
+.settings { max-width: 640px; margin: 0 auto; }
+.settings h2 {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-secondary);
+  margin-bottom: var(--s-3);
+}
+.settings h3 {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: var(--s-2);
+}
+.settings p { font-size: 13px; margin-bottom: var(--s-2); }
+.settings ul { list-style: none; padding: 0; }
+.settings li {
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.settings li:last-child { border-bottom: none; }
+
+.form-row { margin-bottom: var(--s-4); }
+.form-row label {
+  display: block; font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: var(--s-1);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.form-row input, .form-row select {
+  width: 100%; font: inherit;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-button);
+  background: var(--surface);
+}
+.btn {
+  padding: var(--s-2) var(--s-4);
+  background: var(--text-primary);
+  color: var(--surface);
+  border: none;
+  border-radius: var(--r-button);
+  min-height: 44px;
+  font-size: 13px;
+}
+.btn:hover { background: #333; }
+.btn.secondary {
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn.secondary:hover { background: var(--bg); }
+.test-result.ok { color: var(--accent-savings); margin-left: var(--s-3); font-size: 12px; }
+.test-result.err { color: var(--accent-expense); margin-left: var(--s-3); font-size: 12px; }
+
+/* --- Settings: bank account row (with aliases + merge) ------------------ */
+
+.bank-row {
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+.bank-row:last-child { border-bottom: none; }
+.bank-row-name { margin-right: auto; font-weight: 500; }
+.bank-owner-form {
+  display: flex;
+  gap: var(--s-3);
+  align-items: center;
+  margin-bottom: var(--s-2);
+}
+
+/* Aliases — small chips listed under the canonical account name. Each chip
+   is a one-button form so deletion is a single click, no JS. */
+.aliases-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: var(--s-1) 0;
+  padding-left: var(--s-3);
+}
+.aliases-label {
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-right: var(--s-1);
+}
+.alias-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 2px var(--s-2);
+}
+.alias-chip-label {
+  font-size: 11px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.alias-chip-delete {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 0 2px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.alias-chip-delete:hover {
+  background: var(--accent-expense);
+  color: var(--surface);
+}
+
+/* Merge-into form — sub-row under the owner form. Visually de-emphasized
+   so it doesn't compete with the primary owner-assignment action. */
+.merge-form {
+  display: flex;
+  gap: var(--s-2);
+  align-items: center;
+  margin-top: var(--s-2);
+  padding-left: var(--s-3);
+  font-size: 12px;
+}
+.merge-form select {
+  font-size: 12px;
+  padding: 2px var(--s-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-button);
+  background: var(--surface);
+  color: var(--text-secondary);
+  max-width: 320px;
+}
+.merge-form select:hover {
+  border-color: var(--accent-neutral);
+  color: var(--accent-neutral);
+}
+.merge-btn {
+  font-size: 11px;
+  padding: 2px var(--s-3);
+  min-height: 24px;
+}
+
+/* --- Settings: per-account password row -------------------------------- */
+
+.email-account-row { padding: var(--s-3) 0; }
+.email-account-head { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+.pw-indicator {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px var(--s-2);
+  border-radius: var(--r-pill);
+  margin-bottom: var(--s-2);
+}
+.pw-indicator.ok   { color: var(--accent-savings); background: #f0fdf4; border: 1px solid #bbf7d0; }
+.pw-indicator.warn { color: #b45309;               background: #fffbeb; border: 1px solid #fcd34d; }
+.pw-form {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+.pw-input {
+  flex: 1;
+  min-width: 220px;
+  font: inherit;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-button);
+  background: var(--surface);
+}
+.pw-form .btn { min-height: 32px; padding: var(--s-1) var(--s-3); font-size: 12px; }
+.pw-result.ok  { color: var(--accent-savings); font-size: 12px; }
+.pw-result.err { color: var(--accent-expense); font-size: 12px; }
+.muted { color: var(--text-secondary); font-size: 12px; }
+
+/* --- day card (top-of-page summary) ------------------------------------ */
+
+.day-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+  margin-bottom: var(--s-6);
+  overflow: hidden;
+}
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-5);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+/* Inner trio: prev arrow ↔ title ↔ next arrow. Sits on the left of the
+   header, the toggle floats on the right. flex: 1 lets the trio grow so
+   the title stays roughly centered between the arrows. */
+.day-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex: 1;
+  min-width: 0;
+}
+.day-nav-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-button);
+  padding: var(--s-1) var(--s-3);
+  font-size: 16px;
+  color: var(--text-primary);
+  min-width: 36px;
+  min-height: 32px;
+  line-height: 1;
+}
+.day-nav-btn:hover:not([disabled]) {
+  background: var(--accent-neutral);
+  color: var(--surface);
+  border-color: var(--accent-neutral);
+}
+.day-nav-btn[disabled] {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.day-title {
+  text-align: center;
+  flex: 1;
+  min-width: 0;
+}
+.day-label {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+.day-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-top: 2px;
+}
+.day-rows { display: flex; flex-direction: column; }
+.day-tx-row {
+  display: grid;
+  /* 6 columns: merchant · amount · account · owner · tag · delete-x.
+     Delete-x slot is empty for non-SMS rows. */
+  grid-template-columns: 1fr auto auto auto auto auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-3) var(--s-5);
+  border-bottom: 1px solid var(--border);
+  min-height: 48px;
+}
+.day-tx-wrapper:last-child .day-tx-row { border-bottom: none; }
+.day-tx-row:hover { background: #fafafa; }
+.day-tx-account {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.day-tx-owner {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-secondary);
+  padding: 1px var(--s-2);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.day-tx-owner.unowned { opacity: 0.55; }
+.day-footer {
+  padding: var(--s-2) var(--s-5);
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  text-align: center;
+}
+.day-count {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+/* --- add-sms page ------------------------------------------------------ */
+
+.add-sms { max-width: 720px; margin: 0 auto; }
+.add-sms-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: var(--s-3);
+}
+.add-sms-help {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: var(--s-3);
+  line-height: 1.5;
+}
+.add-sms-help.muted { color: var(--text-secondary); font-size: 12px; }
+.sms-textarea {
+  width: 100%;
+  font-family: 'SF Mono', Monaco, Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-button);
+  background: var(--surface);
+  resize: vertical;
+  min-height: 120px;
+}
+.sms-result {
+  margin-top: var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-button);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.sms-result.ok  { color: var(--accent-savings); background: #f0fdf4; border: 1px solid #bbf7d0; }
+.sms-result.err { color: var(--accent-expense); background: #fef2f2; border: 1px solid #fecaca; }
+
+/* Delete button on SMS-derived transaction rows. Visually muted by default
+   so it doesn't compete with the merchant/amount/tag eye-line; reveals red
+   on hover. Only renders when the row's source is the SMS marker. */
+.tx-delete {
+  background: transparent;
+  border: none;
+  border-radius: var(--r-button);
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  min-height: 24px;
+  min-width: 20px;
+  margin-left: 0;
+  line-height: 1;
+  opacity: 0.45;
+}
+.tx-delete:hover {
+  background: var(--accent-expense);
+  color: var(--surface);
+  opacity: 1;
+}
+
+/* --- bills card (top-of-page, between day card and account grid) -------- */
+
+.bills-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+  margin-bottom: var(--s-6);
+  overflow: hidden;
+}
+.bills-header {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-5);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.bills-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.bills-count {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-left: var(--s-2);
+}
+.bill-rows { display: flex; flex-direction: column; }
+.bill-rows.paid { background: #fafafa; }
+
+.bill-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-3) var(--s-5);
+  border-bottom: 1px solid var(--border);
+  min-height: 48px;
+}
+.bill-wrapper:last-child .bill-row { border-bottom: none; }
+.bill-row:hover { background: #fafafa; }
+.bill-rows.paid .bill-row:hover { background: #f0f0f0; }
+
+.bill-due {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px var(--s-2);
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border: 1px solid transparent;
+}
+.bill-due.due-red {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+.bill-due.due-amber {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+.bill-due.due-neutral {
+  color: var(--text-secondary);
+  background: var(--bg);
+  border-color: var(--border);
+}
+.bill-due.due-paid {
+  color: var(--accent-savings);
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+.bill-biller {
+  /* uses .tx-merchant link styling already; keep flex-wrap allowance */
+  white-space: normal;
+}
+.bill-amount {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.bill-rows.paid .bill-amount { color: var(--text-secondary); }
+
+.bill-action {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-button);
+  padding: var(--s-1) var(--s-3);
+  font-size: 11px;
+  color: var(--text-primary);
+  min-height: 28px;
+  white-space: nowrap;
+}
+.bill-action:hover {
+  background: var(--accent-savings);
+  color: var(--surface);
+  border-color: var(--accent-savings);
+}
+.bill-action.undo:hover {
+  background: var(--text-secondary);
+  border-color: var(--text-secondary);
+}
+
+.bills-paid-header {
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  padding: var(--s-2) var(--s-5);
+}
+.bills-paid-toggle {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 0;
+}
+.bills-paid-toggle:hover { color: var(--accent-neutral); }
+
+/* --- mobile (<= 640px) ------------------------------------------------- */
+
+@media (max-width: 640px) {
+  .home { padding: var(--s-4) var(--s-3); }
+  .header { padding: var(--s-3) var(--s-4); }
+  .account-header {
+    padding: var(--s-3) var(--s-4);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-1);
+  }
+  /* Mobile transaction row: 3 rows × 2 cols, named areas to avoid overlap.
+     Layout:
+       [date    ] [amount]
+       [merchant] [amount]   <- amount spans rows 1-2 on the right
+       [tag     ] [tag   ]   <- tag spans full width, right-aligned
+  */
+  .transaction-row {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "date    amount"
+      "merch   amount"
+      "tag     tag";
+    padding: var(--s-3) var(--s-4);
+    gap: var(--s-1) var(--s-3);
+  }
+  .tx-date     { grid-area: date; }
+  .tx-merchant { grid-area: merch; white-space: normal; }
+  .tx-amount   { grid-area: amount; align-self: center; }
+  /* The 4th grid item is either a single .tx-tag button or a Span wrapping
+     two .tx-tag buttons (when no manual_tag set yet). Either way it goes
+     into the 'tag' area, right-aligned. */
+  .transaction-row > .tx-tag,
+  .transaction-row > span:last-child {
+    grid-area: tag;
+    justify-self: end;
+  }
+
+  /* Day card rows on mobile: stack into 3 visual lines.
+       row 1: merchant ↔ amount
+       row 2: account (full width, muted)
+       row 3: owner ↔ tag                                      */
+  .day-tx-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "merch    amount"
+      "account  account"
+      "owner    tag";
+    gap: var(--s-1) var(--s-3);
+    padding: var(--s-3) var(--s-4);
+  }
+  .day-tx-row > .tx-merchant   { grid-area: merch; }
+  .day-tx-row > .tx-amount     { grid-area: amount; }
+  .day-tx-row > .day-tx-account { grid-area: account; }
+  .day-tx-row > .day-tx-owner  { grid-area: owner; justify-self: start; }
+  .day-tx-row > .tx-tag,
+  .day-tx-row > span:last-child { grid-area: tag; justify-self: end; }
+  .day-header { padding: var(--s-3) var(--s-4); }
+
+  .bill-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "due     amount"
+      "biller  biller"
+      "action  action";
+    gap: var(--s-1) var(--s-3);
+    padding: var(--s-3) var(--s-4);
+  }
+  .bill-row > .bill-due { grid-area: due; justify-self: start; }
+  .bill-row > .bill-biller { grid-area: biller; }
+  .bill-row > .bill-amount { grid-area: amount; }
+  .bill-row > .bill-action { grid-area: action; justify-self: end; }
+  .bills-header { padding: var(--s-3) var(--s-4); }
+}

@@ -1,0 +1,10 @@
+# Runtime
+python-fasthtml>=0.6        # web framework (Starlette + HTMX)
+starlette>=0.27             # imported directly (StaticFiles)
+pydantic>=2.5               # parsed-transaction schema
+ollama>=0.1.7               # Ollama HTTP client
+html2text>=2024.2.26        # strip HTML from email bodies
+pypdf>=4.0                  # PDF attachment text extraction (statements)
+
+# Dev / test
+pytest>=8.0

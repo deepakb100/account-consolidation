@@ -470,4 +470,12 @@ If you fork this and intend to publish, run a PII sweep on the codebase first �
 
 ---
 
+## License
+
+MIT — see [LICENSE](LICENSE) for full text. Copyright © 2026 Deepak Bhatia.
+
+You are free to use, modify, and redistribute this software for any purpose, including commercially, as long as the copyright notice is preserved. The software is provided "as is", without warranty.
+
+---
+
 **Open issues / planned work:** see `TODOS.md`. Pull requests welcome.

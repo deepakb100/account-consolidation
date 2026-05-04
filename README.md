@@ -151,15 +151,81 @@ VALUES ('Personal Gmail', 'you@gmail.com', 'imap.gmail.com', 993, 'xxxx xxxx xxx
 
 Use an **app password**, not your normal account password. Banks send transaction alerts with strict authentication, and most providers require app passwords for IMAP access anyway.
 
-| Provider | IMAP host | Port | App-password setup |
+| Provider | IMAP host | Port | Quick link |
 |---|---|---|---|
-| Gmail | `imap.gmail.com` | 993 | Enable 2FA, then https://myaccount.google.com/apppasswords |
-| Outlook / 365 | `outlook.office365.com` | 993 | Enable 2FA, then https://account.microsoft.com/security → App passwords |
-| AOL | `imap.aol.com` | 993 | https://login.aol.com → Account info → Generate app password |
-| Yahoo | `imap.mail.yahoo.com` | 993 | Account security → Generate app password |
-| iCloud | `imap.mail.me.com` | 993 | https://appleid.apple.com → App-specific passwords |
+| Gmail | `imap.gmail.com` | 993 | https://myaccount.google.com/apppasswords |
+| Outlook / 365 | `outlook.office365.com` | 993 | https://account.microsoft.com/security |
+| AOL | `imap.aol.com` | 993 | https://login.aol.com → Account info |
+| Yahoo | `imap.mail.yahoo.com` | 993 | https://login.yahoo.com → Account security |
+| iCloud | `imap.mail.me.com` | 993 | https://appleid.apple.com |
 
-**Storage:** the password lives in `email_accounts.app_password` (sqlite, on your disk). For local-only use this is fine. If you'd rather not have it in the DB, set the env var `APP_PASSWORD_<id>` (per account) or `APP_PASSWORD` (single-account fallback) before starting the server. The poller checks env first, then the DB column.
+Step-by-step instructions per provider below. **All providers require 2-Step Verification (2FA) on the account first** — app passwords are designed to bypass interactive 2FA, so the provider won't let you generate one without 2FA enabled.
+
+<details>
+<summary><strong>Gmail</strong> (personal and Google Workspace)</summary>
+
+1. Enable 2-Step Verification at https://myaccount.google.com/security under "How you sign in to Google" → 2-Step Verification. Skip if already on.
+2. Open https://myaccount.google.com/apppasswords (sign in if prompted).
+3. In **App name**, type something descriptive: `Finance Dashboard IMAP`.
+4. Click **Create**.
+5. Google shows a 16-character password formatted as four groups of four (e.g. `abcd efgh ijkl mnop`). **Copy it now** — Google won't show it again.
+6. Click **Done**. Use that password in the dashboard's `/settings` form (spaces optional, Gmail accepts both).
+
+**Workspace gotcha:** if the App passwords page returns "Your account doesn't have access," your Workspace admin disabled the feature org-wide. They can re-enable it under Admin Console → Security → "Less secure apps and your account" → Allow users to manage their access to less secure apps. IMAP host is `imap.gmail.com` either way.
+</details>
+
+<details>
+<summary><strong>Outlook / Microsoft 365</strong></summary>
+
+1. Enable 2-Step Verification at https://account.microsoft.com/security → **Advanced security options** → "Two-step verification" → Turn on. Skip if already on.
+2. Same page, scroll to **App passwords** → click **Create a new app password**.
+3. Microsoft shows a long alphanumeric password. **Copy it now** — once you close the page it's gone.
+4. Use that password with IMAP host `outlook.office365.com`, port `993`.
+
+**Microsoft 365 / Exchange Online gotcha:** if the App passwords option doesn't appear, your tenant admin probably disabled basic authentication for IMAP. They can re-enable it in the Microsoft 365 admin center under Settings → Org settings → Modern authentication → check "Authenticated SMTP" and "IMAP". Some tenants are moving to OAuth-only IMAP, in which case app passwords aren't possible — you'd need a different mailbox.
+</details>
+
+<details>
+<summary><strong>AOL</strong></summary>
+
+1. Enable 2-Step Verification at https://login.aol.com → **Account info** → **Account security** → "Two-step verification" → Turn on. Skip if already on.
+2. Same **Account security** page, scroll to **Generate app password** → click it.
+3. Enter a name (e.g. `Finance Dashboard`) → click **Generate**.
+4. AOL shows a 16-character password without spaces. **Copy it now** — you can't view it again.
+5. Use that password with IMAP host `imap.aol.com`, port `993`.
+
+**Note:** AOL's interface periodically reorganizes. If "Generate app password" isn't visible under Account security, search Yahoo/AOL help for "app password" — Yahoo owns AOL and the steps are nearly identical.
+</details>
+
+<details>
+<summary><strong>Yahoo Mail</strong></summary>
+
+1. Enable 2-Step Verification at https://login.yahoo.com → **Account security** → "Two-step verification" → Turn on. Skip if already on.
+2. Same **Account security** page → **Generate app password** → **Get started**.
+3. Pick "Other app", give it a name (e.g. `Finance Dashboard`), click **Generate**.
+4. Yahoo shows a 16-character password. **Copy it now**.
+5. Use that password with IMAP host `imap.mail.yahoo.com`, port `993`.
+</details>
+
+<details>
+<summary><strong>iCloud Mail</strong></summary>
+
+1. Enable Two-Factor Authentication at https://appleid.apple.com → **Sign-In and Security**. Skip if already on. (Apple's 2FA is mandatory for app-specific passwords.)
+2. Same page, click **App-Specific Passwords** → **Generate an app-specific password** (or "+").
+3. Enter a label (e.g. `Finance Dashboard`) → click **Create**.
+4. Apple shows a password formatted as `xxxx-xxxx-xxxx-xxxx`. **Copy it now**.
+5. Use that password with IMAP host `imap.mail.me.com`, port `993`. The IMAP username is your full Apple ID email (e.g. `you@icloud.com`).
+
+**Note:** iCloud blocks IMAP for some accounts that haven't been used recently — if login fails after creating the password, sign in to https://www.icloud.com/mail/ once in a browser to "wake up" the mailbox, then retry.
+</details>
+
+### Storage and rotation
+
+The password lives in `email_accounts.app_password` (sqlite, on your disk). For local-only use this is fine. If you'd rather not have it in the DB, set the env var `APP_PASSWORD_<id>` (per account) or `APP_PASSWORD` (single-account fallback) before starting the server. The poller checks env first, then the DB column.
+
+**Revoke immediately if leaked.** All providers list active app passwords on the same page where you generated them — you can delete any password without affecting your main account password. Revoking + regenerating after each laptop swap is good hygiene.
+
+**Don't reuse this password elsewhere.** App passwords bypass 2FA. Anyone with one can read all your mail.
 
 ## Configuration
 

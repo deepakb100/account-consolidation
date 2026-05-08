@@ -6,7 +6,7 @@
 # Default: local Ollama (private, no data leaves machine).
 # Run `ollama serve` and `ollama pull llama3.2` first.
 provider = "ollama"
-model = "llama3.1"
+model = "qwen2.5:14b"
 host = "http://localhost:11434"
 
 # Optional: OpenAI fallback after 3 failed Ollama parses.
